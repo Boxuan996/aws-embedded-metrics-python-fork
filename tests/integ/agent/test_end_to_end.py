@@ -16,7 +16,18 @@ print(f"Using test-id {test_id}")
 # enable verbose logging in case something goes wrong
 # pytest won't actually output any of the logs unless it fails
 logging.basicConfig(level=logging.INFO)
-client = boto3.client("cloudwatch", region_name=os.environ["AWS_REGION"])
+# if $AWS_SESSION_TOKEN is not set, the script is running on a local machine, using the credentials set via the command line.
+# otherwise, the script is running on a CodeBuild pipeline using the service role to create the client.
+if os.environ.get("AWS_SESSION_TOKEN") is None:
+    client = boto3.client("cloudwatch", region_name=os.environ["AWS_REGION"])
+else:
+    client = boto3.client(
+        "cloudwatch",
+        region_name=os.environ["AWS_REGION"],
+        aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+        aws_session_token=os.environ["AWS_SESSION_TOKEN"]
+    )
 
 Config = get_config()
 Config.service_name = "IntegrationTests"
